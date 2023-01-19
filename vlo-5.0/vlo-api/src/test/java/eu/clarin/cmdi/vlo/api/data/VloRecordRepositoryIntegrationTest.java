@@ -20,6 +20,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.HealthStatus;
 import com.google.common.collect.Lists;
+import eu.clarin.cmdi.vlo.api.configuration.VloElasticsearchConfiguration;
 import eu.clarin.cmdi.vlo.data.model.VloRecord;
 import eu.clarin.cmdi.vlo.data.model.VloRecord.Resource;
 import eu.clarin.cmdi.vlo.elasticsearch.VloRecordRepository;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -41,6 +41,8 @@ import org.springframework.boot.autoconfigure.elasticsearch.ReactiveElasticsearc
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.repository.config.EnableReactiveElasticsearchRepositories;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.EnabledIf;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Flux;
@@ -51,14 +53,15 @@ import reactor.core.publisher.Mono;
  * @author CLARIN ERIC <clarin@clarin.eu>
  */
 @ExtendWith(SpringExtension.class)
-//@SpringJUnitConfig(classes = {VloRecordRepositoryIntegrationTest.TestElasticsearchConfig.class})
 @Profile("elastic-test")
+@ContextConfiguration(classes = VloElasticsearchConfiguration.class)
+@TestPropertySource(locations = {"classpath:elastic-test.properties"})
 @EnabledIf(expression = "#{environment.acceptsProfiles('elastic-test')}", loadContext = true)
 @EnableReactiveElasticsearchRepositories(basePackageClasses = VloRecordRepository.class)
 @ImportAutoConfiguration({ElasticsearchClientAutoConfiguration.class, ReactiveElasticsearchClientAutoConfiguration.class, ElasticsearchDataAutoConfiguration.class})
 @Slf4j
 public class VloRecordRepositoryIntegrationTest {
-
+    
     @Autowired
     private VloRecordRepository instance;
 
@@ -136,14 +139,14 @@ public class VloRecordRepositoryIntegrationTest {
     private BooleanSupplier checkElasticConnection() {
         return () -> {
             try {
-                return elasticsearchClient.cluster().health().status() == HealthStatus.Green;
+                return elasticsearchClient.cluster().health().status() != HealthStatus.Red;
             } catch (ElasticsearchException | IOException ex) {
                 log.warn("Error while retrieving clust health status", ex);
                 return false;
             }
         };
     }
-//
+
 //    @Configuration
 //    public static class TestElasticsearchConfig extends VloElasticsearchConfiguration {
 //
