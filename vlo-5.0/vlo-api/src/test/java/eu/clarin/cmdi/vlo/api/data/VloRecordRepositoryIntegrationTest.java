@@ -19,12 +19,15 @@ package eu.clarin.cmdi.vlo.api.data;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.HealthStatus;
+import co.elastic.clients.elasticsearch.core.GetResponse;
 import com.google.common.collect.Lists;
 import eu.clarin.cmdi.vlo.api.configuration.VloElasticsearchConfiguration;
 import eu.clarin.cmdi.vlo.data.model.VloRecord;
 import eu.clarin.cmdi.vlo.data.model.VloRecord.Resource;
 import eu.clarin.cmdi.vlo.elasticsearch.VloRecordRepository;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.BooleanSupplier;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +64,7 @@ import reactor.core.publisher.Mono;
 @ImportAutoConfiguration({ElasticsearchClientAutoConfiguration.class, ReactiveElasticsearchClientAutoConfiguration.class, ElasticsearchDataAutoConfiguration.class})
 @Slf4j
 public class VloRecordRepositoryIntegrationTest {
-    
+
     @Autowired
     private VloRecordRepository instance;
 
@@ -102,19 +105,16 @@ public class VloRecordRepositoryIntegrationTest {
     public void testSave() throws IOException {
         Assumptions.assumeTrue(checkElasticConnection(), "ElasticSearch not running. SKIPPING!");
 
-        final VloRecord inputRecord = VloRecord.builder()
-                .id("id123")
-                .dataRoot("testDataRoot")
-                .profileId("clarin_profile_id")
-                .selflink("http://repo.eu/id123")
-                .resources(Lists.newArrayList(
-                        Resource.builder().id("resource1").mediaType("text/plain").ref("http://repo.eu/id123/resource1").build(),
-                        Resource.builder().id("resource2").mediaType("text/plain").ref("http://repo.eu/id123/resource2").build()
-                ))
-                .build();
+        final ArrayList<Resource> resources = Lists.newArrayList(
+                new Resource("resource1", "http://repo.eu/id123/resource1", "Resource", "text/plain"),
+                new Resource("resource2", "http://repo.eu/id123/resource2", "Resource", "text/plain")
+        );
+
+        final VloRecord inputRecord = new VloRecord("id123", "testDataRoot", "clarin_profile_id", "http://repo.eu/id123", resources);
+        
 
         inputRecord.getFields().put("test", Lists.newArrayList("test1", "test2"));
-        inputRecord.getResources().add(Resource.builder().id("resource1").mediaType("text/plain").ref("http://repo.eu/id123/resource1").build());
+        inputRecord.getResources().add(new Resource("resource1", "http://repo.eu/id123/resource1", "Resource", "text/plain"));
 
         final Mono<VloRecord> result = instance.save(inputRecord);
         final VloRecord response = result
@@ -126,12 +126,29 @@ public class VloRecordRepositoryIntegrationTest {
         assertNotNull(response);
         insertedIds.add(response.getId());
 
-        VloRecord retrieved = operations.get(inputRecord.getId(), VloRecord.class);
+        // TODO: Low-level verification
+        //
+//        // test with repo
+//        final Mono<VloRecord> repoRetrieved = instance.findById(Mono.just(inputRecord.getId()));
+//        repoRetrieved.flatMap(retrieved -> {
+//            assertResultRecord(inputRecord, retrieved);
+//            return Mono.empty();
+//        }).block(Duration.ofSeconds(60));
+//
+//        // test with client
+//        final GetResponse<VloRecord> getResponse = elasticsearchClient.get(g -> g
+//                .index("record")
+//                .id(inputRecord.getId()), VloRecord.class);
+//        assertTrue(getResponse.found());
+//        assertResultRecord(inputRecord, getResponse.source());
+//
+//        // test with operations API
+//        final VloRecord operationsRetrieved = operations.get(inputRecord.getId(), VloRecord.class);
+//        assertResultRecord(inputRecord, operationsRetrieved);
 
-//        GetResponse getResponse = elasticsearchClient.get(
-//                Requests.getRequest("record")
-//                        .id(inputRecord.getId()),
-//                RequestOptions.DEFAULT);
+    }
+
+    private void assertResultRecord(final VloRecord inputRecord, VloRecord retrieved) {
         assertEquals(inputRecord.getId(), retrieved.getId());
         assertEquals(inputRecord.getDataRoot(), retrieved.getDataRoot());
     }
@@ -159,7 +176,6 @@ public class VloRecordRepositoryIntegrationTest {
 //
 //        }
 //    }
-
 //
 //    @Configuration
 //    public static class TestElasticsearchConfig extends AbstractElasticsearchConfiguration {
