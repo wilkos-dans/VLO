@@ -111,7 +111,6 @@ public class VloRecordRepositoryIntegrationTest {
         );
 
         final VloRecord inputRecord = new VloRecord("id123", "testDataRoot", "clarin_profile_id", "http://repo.eu/id123", resources);
-        
 
         inputRecord.getFields().put("test", Lists.newArrayList("test1", "test2"));
         inputRecord.getResources().add(new Resource("resource1", "http://repo.eu/id123/resource1", "Resource", "text/plain"));
@@ -126,15 +125,17 @@ public class VloRecordRepositoryIntegrationTest {
         assertNotNull(response);
         insertedIds.add(response.getId());
 
-        // TODO: Low-level verification
+        // test with repo
+        final Mono<VloRecord> repoRetrieved = instance.findById(Mono.just(inputRecord.getId()));
+        repoRetrieved.flatMap(retrieved -> {
+            assertResultRecord(inputRecord, retrieved);
+            return Mono.empty();
+        }).doOnError((e) -> {
+            fail("Error in IndexResponse mono", e);
+        }).block(Duration.ofSeconds(60));
+
+        // TODO: Low-level verification?
         //
-//        // test with repo
-//        final Mono<VloRecord> repoRetrieved = instance.findById(Mono.just(inputRecord.getId()));
-//        repoRetrieved.flatMap(retrieved -> {
-//            assertResultRecord(inputRecord, retrieved);
-//            return Mono.empty();
-//        }).block(Duration.ofSeconds(60));
-//
 //        // test with client
 //        final GetResponse<VloRecord> getResponse = elasticsearchClient.get(g -> g
 //                .index("record")
@@ -145,11 +146,12 @@ public class VloRecordRepositoryIntegrationTest {
 //        // test with operations API
 //        final VloRecord operationsRetrieved = operations.get(inputRecord.getId(), VloRecord.class);
 //        assertResultRecord(inputRecord, operationsRetrieved);
-
     }
 
     private void assertResultRecord(final VloRecord inputRecord, VloRecord retrieved) {
         assertEquals(inputRecord.getId(), retrieved.getId());
+        assertEquals(inputRecord.getDataRoot(), retrieved.getDataRoot());
+        assertEquals(inputRecord.getSelflink(), retrieved.getSelflink());
         assertEquals(inputRecord.getDataRoot(), retrieved.getDataRoot());
     }
 
