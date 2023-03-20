@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eu.clarin.cmdi.vlo.importer.normalizer.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -44,21 +45,6 @@ import eu.clarin.cmdi.vlo.importer.linkcheck.ResourceAvailabilityStatusChecker;
 import eu.clarin.cmdi.vlo.importer.linkcheck.RasaResourceAvailabilityStatusChecker;
 import eu.clarin.cmdi.vlo.importer.linkcheck.RasaResourceAvailabilityStatusChecker.RasaResourceAvailabilityStatusCheckerConfiguration;
 import eu.clarin.cmdi.vlo.importer.mapping.FacetMappingFactory;
-import eu.clarin.cmdi.vlo.importer.normalizer.AbstractPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.CreatorPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.AvailabilityPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.ContinentNamePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.CountryNamePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.IdPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.LanguageCodePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.LanguageNamePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.LicensePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.LicenseTypePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.MultilingualPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.NamePostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.OrganisationPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.ResourceClassPostNormalizer;
-import eu.clarin.cmdi.vlo.importer.normalizer.TemporalCoveragePostNormalizer;
 import eu.clarin.cmdi.vlo.importer.processor.*;
 import eu.clarin.cmdi.vlo.importer.solr.BufferingSolrBridgeImpl;
 import eu.clarin.cmdi.vlo.importer.solr.DocumentStoreException;
@@ -273,6 +259,7 @@ public class MetadataImporter implements Closeable, MetadataImporterRunStatistic
         registerPostProcessor(fieldNameService, imb, FieldKey.LICENSE, () -> new LicensePostNormalizer(config));
         registerPostProcessor(fieldNameService, imb, FieldKey.NAME, () -> new NamePostNormalizer());
         registerPostProcessor(fieldNameService, imb, FieldKey.CREATOR, () -> new CreatorPostNormalizer());
+        registerPostProcessor(fieldNameService, imb, FieldKey.FAIR_A_1_1, () -> new CommunicationProtocolPostNormalizer());
 
         return imb.build();
     }
