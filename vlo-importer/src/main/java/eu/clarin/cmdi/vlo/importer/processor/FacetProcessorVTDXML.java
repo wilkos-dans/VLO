@@ -40,13 +40,12 @@ import static eu.clarin.cmdi.vlo.importer.processor.LanguageDefaults.ENGLISH_LAN
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.SolrInputField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,15 +81,41 @@ public class FacetProcessorVTDXML implements FacetProcessor {
      */
     @Override
     public void processFacets(CMDIData cmdiData, FacetsMapping facetMapping) throws URISyntaxException, UnsupportedEncodingException, CMDIParsingException {
+        /**
+         * facetValuesMap["cLp_fair_a1_1"] = [26 [code:und] true, 47 [code:und] false, 56 [code:und] true]
+         *
+         * after valueWriter.writeValuesToDoc(cmdiData, facetValuesMap)
+         * facetValuesMap remains the same
+         * cmdiData is filled and field["cLp_fair_a1_1"] = [true, false]
+         */
         try {
             FacetValuesMap facetValuesMap = getFacetValuesMap(cmdiData, nav, facetMapping);
 
             valueWriter.writeValuesToDoc(cmdiData, facetValuesMap);
 
             valueWriter.writeDefaultValues(cmdiData, facetMapping);
+
+            // 20230323 Vic rewriting list of string or string to boolean like value
+            rewriteBooleanValues(cmdiData, "cLp_fair_a1_1");
         } catch (VTDException ex) {
             throw new CMDIParsingException("VTD parsing exception while processing facets", ex);
         }
+    }
+
+    /**
+     * if the field contains only true/false strings, treat them as boolean value and concatenate with AND
+     *
+     * @param cmdiData
+     * @param fieldString
+     */
+    private void rewriteBooleanValues(CMDIData cmdiData, String fieldString) {
+        SolrInputField field = ((CMDIData<SolrInputDocument>) cmdiData).getDocument().getField(fieldString);
+        try {
+            List<String> list = (List<String>) field.getValue();
+            if (!(list.size() == 1 && Objects.equals(list.get(0), "true"))) {
+                field.setValue("false");
+            }
+        } catch (ClassCastException ignored) {}
     }
 
     /**
@@ -274,7 +299,6 @@ public class FacetProcessorVTDXML implements FacetProcessor {
      * @param facetConfig FacetDefinition of the origin facet (which might lead
      * to different target facets)
      * @param valueLanguagePair Value/language Pair
-     * @param isDerived Is derived facet
      */
     private void processRawValue(CMDIData cmdiData, FacetValuesMap facetValuesMap, int vtdIndex, FacetDefinition facetConfig, Pair<String, String> valueLanguagePair) {
         if (facetConfig.getName().equals(fieldNameService.getFieldName(FieldKey.LANGUAGE_CODE)) && !valueLanguagePair.getRight().equals(ENGLISH_LANGUAGE) && !valueLanguagePair.getRight().equals(DEFAULT_LANGUAGE)) {
