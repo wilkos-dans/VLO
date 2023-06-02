@@ -127,8 +127,7 @@ public class MetadataImporterRunner {
         } else {
             configUrl = new File(configFile).toURI().toURL();
         }
-        System.out.println("Reading configuration from " + configUrl.toString());
-        LOG.info("Reading configuration from " + configUrl.toString());
+        LOG.info("Reading configuration from " + configUrl);
 
         final XmlVloConfigFactory configFactory = new XmlVloConfigFactory(configUrl);
         final VloConfig config = configFactory.newConfig();

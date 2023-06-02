@@ -108,14 +108,29 @@ public class FacetProcessorVTDXML implements FacetProcessor {
      * @param cmdiData
      * @param fieldString
      */
-    private void rewriteBooleanValues(CMDIData cmdiData, String fieldString) {
+    private void rewriteBooleanValues(CMDIData<?> cmdiData, String fieldString) {
         SolrInputField field = ((CMDIData<SolrInputDocument>) cmdiData).getDocument().getField(fieldString);
+        List<String> resultList = new ArrayList<>();
         try {
-            List<String> list = (List<String>) field.getValue();
-            if (!(list.size() == 1 && Objects.equals(list.get(0), "true"))) {
-                field.setValue("false");
+            resultList = (List<String>) field.getValue();
+        } catch (ClassCastException ignored) {
+            LOG.info("Cannot cast {} to List", field.getValue().getClass());
+            try {
+                String resultString = (String) field.getValue();
+                resultList.add(resultString);
+            } catch (ClassCastException ignored2) {
+                LOG.info("Cannot cast {} to String", field.getValue().getClass());
             }
-        } catch (ClassCastException ignored) {}
+        } finally {
+            LOG.info("Final result list: " + resultList);
+            if (!(resultList.size() == 1 && Objects.equals(resultList.get(0), "true"))) {
+                field.setValue("false");
+                LOG.info("### {} value set to false", fieldString);
+            } else {
+                LOG.info("### {} value set to true", fieldString);
+            }
+
+        }
     }
 
     /**

@@ -123,7 +123,7 @@ public class MetadataMapper {
             CMDIData<SolrInputDocument> cmdiData = processor.process(record, new ResourceStructureGraph());
 
             for (String field : cmdiData.getDocument().getFieldNames()) {
-                System.out.println(cmdiData.getDocument().getField(field));
+                LOG.debug(String.valueOf(cmdiData.getDocument().getField(field)));
             }
 
             // finished importing
