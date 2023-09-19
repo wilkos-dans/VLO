@@ -5,8 +5,6 @@ separate tab in VLO portal.
 
 Most of the current work is done in `vlo-commons` and `vlo-importer` module.  
 
-
-
 ## Files modified in order to add new facet to VLO 
 Files to be modified in `vlo-commons` module, path: `vlo-commons/src/main/java/eu/clarin/cmdi/vlo/
 - `./FieldKey.java`: Field is only added to VLO when it's defined here. It is **not** yet a facet. 
@@ -32,3 +30,32 @@ Ideally to add a new facet to VLO, you need to do the following steps:
 6. Around line line 99 in `FacetProcessorVTDXML.java` in `vlo-importer` module, add a new case for the new field
 
 > **NOTE** **TODO**: Still investigating how field rewriting should be properly (systematically) done.
+
+## How to compile modules and whole project
+### Build individual modules
+- `mvn clean package` in `vlo-commons` module, with `-DskipTests=True` if you want to skip tests. 
+
+### Building whole project
+The following line will build a war file of VLO and it is **not** depending on your local `java` and `maven` version.
+
+- `CLEAN_CACHE=true ./build.sh -DskipTests=true -Pdocker` in root folder of `VLO`. 
+
+### Building docker image
+The following line will build a docker image. With the latest version of the `VLO` project which just being built locally.
+- Run `./build.sh -b -l` in [`docker-vlo-beta`](../docker-vlo-beta) folder.
+
+Some of the shell scripts have to be adapted to your local environment.
+- In `copy_data.sh`, source `copy_data_env.dev.sh` instead of `copy_data_env.sh`
+  - Variable `SRC_FILE` at around line 22 might need modification
+- In `copy_data_dev.env.sh`, 
+  - variable `VLO_VERSION` should be correspondent to your compiled war file
+  - variable `REMOTE_RELEASE_URL` should be the local location of your war file, i.e, `file:///home/username/git/VLO/vlo-web-app/target/vlo-web-app-4.7.1-SNAPSHOT.war`
+
+After running the script, you should have a docker image named like `vlo-${VLO_VERSION}-docker`, i.e, `vlo-4.7.1-1-docker`.
+
+### Running VLO
+In folder `clariah-vlo`, where all the docker compose files are located, run `docker-compose up -d`. Optionally you can add -f <location of docker compose file> to specify which docker compose file to use.
+
+### Run importer and see the VLO portal
+
+
