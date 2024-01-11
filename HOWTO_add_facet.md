@@ -5,22 +5,52 @@ separate tab in VLO portal.
 
 Most of the current work is done in `vlo-commons` and `vlo-importer` module.  
 
-## Files modified in order to add new facet to VLO 
-Files to be modified in `vlo-commons` module, path: `vlo-commons/src/main/java/eu/clarin/cmdi/vlo/
-- `./FieldKey.java`: Field is only added to VLO when it's defined here. It is **not** yet a facet. 
-- `resources/VloConfig.xml` **TODO** It seems that the field added here becomes a facet in VLO and put through post-process, need verification. 
-- `resources/VloConfig.xsd` Needs the key here to pass validation. 
+## Files modified in order to add new facet to VLO: 
+Files to be modified in `vlo-commons` module:
+- **/src/main/java/eu/clarin/cmdi/vlo/FieldKey.java**: Field is only added to VLO when it's defined here. It is **not** yet a facet, but an java Enum. I.e: `FAIR_A_1_1`
+- **/resources/VloConfig.xml**: Contains, amongst other, the Solr fieldname mappings to a java Enum. Make sure both exist. I.e: `<field key="FAIR_A_1_1">cLp_fair_a1_1</field>`
+- **/resources/VloConfig.xsd**: Adds the java Enum as a type: i.e: `<xs:enumeration value="FAIR_A_1_1" />`. 
 
-Files to be modified in `vlo-importer` module, path: `vlo-importer/src/main/java/eu/clarin/cmdi/vlo/importer/`
-- `Metadataimporter.java`: Defines which post-processor to use for each field. This is also the entrypoint for checking fairness of the field. (line 262)
-- `processor/FacetProcessorVTDXML.java`: Line 97 ~ 120, not sure if this is the best place for calling code for combining value given by processors/post-processors. **TODO** need better code 
-- `normalizer/CommunicationProtocolPostNormalizer.java`: Defines function for assessing fairness of the field. 
+Files to be modified in `vlo-importer` module, path: `vlo-importer/src/main/java/eu/clarin/cmdi/vlo/importer/`.
+- **./Metadataimporter.java**: Maps a post-processor to a field(key). This is also the entrypoint for checking fairness of the field. (line 262) `FieldKey.FAIR_A_1_1, () -> new CommunicationProtocolPostNormalizer()`
+- **./processor/FacetProcessorVTDXML.java**: Line 83, #processFacets() method. Not sure if this is the best place for calling code for combining value given by processors/post-processors.
+- **./normalizer/CommunicationProtocolPostNormalizer.java**: Defines the actual facet logic: In this case a simple function for assessing fairness of the field.
+The importer module will load the Solr config and datasets into the Docker (see below).
 
-Files to be modified in `vlo-web-app` module, path: `vlo-web/src/main/resources/`
-- `./fieldNames.properties`: *This file defines label to be shown on the web page for each associated field*
-- **TODO** Actually add the facet to page on new tab using JSF. 
+Files to be modified in `vlo-web-app` module, path: `vlo-web`
+- **/src/main/resources/fieldNames.properties**: This file sets the (facet) wicket-label on the web page for each field. 
 
-## Adding new facet to VLO
+Solr needs to know the field configuration before it can treat the new field as a facet. Therefore you need to add the Solr fieldname (in this example `cLp_fair_a1_1`) to the facetsConfiguration.xml file.   
+For this example, the next snippet should be added:
+```
+    <facet name="cLp_fair_a1_1">
+        <displayAs>primaryFacet</displayAs>
+        <displayAs>ignoredField</displayAs>
+        <description>FAIR Principle A1.1: The protocol is open, free and universally implementable</description>
+        <definition>Selflinks must start with HTTPS protocol.</definition>
+    </facet>
+```
+However, I can find multiple instances of this config file thoughout the project, which is confusing.   
+For now the file gets loaded from github, when running the importer.   
+I tried to load it localy from file, but that didn't work (yet):   
+From VLO/vlo-commons/pom.xml, I added the facetConceptsFileLocation property, to no avail:
+```
+  <!-- empty location uses bundled default facet concepts file 
+  (from the VLO-mapping project) -->
+  <vloconfig.facetConceptsFileLocation>/vlo-mapping/mapping/facetConcepts.xml</vloconfig.facetConceptsFileLocation>
+  <vloconfig.facetsConfigFileLocation>/vlo-mapping/config/facetsConfiguration.xml</vloconfig.facetsConfigFileLocation>
+```
+So I decided to take this route, via the `datasets-vlo` repository (local clone):
+- I created a fork of the VLO-mapping repo and edited the facetsConfiguration.xml in there.
+  - https://github.com/wilkos-dans/VLO-mapping/blob/CLPFAIR/config/facetsConfiguration.xml
+- Changed the ENV variable in the datasets-vlo repo locally, to download the archive that contains the updated facetsConfiguration.xml:
+  - `VLO_MAPPING_DEFINITIONS_DIST_URL=https://github.com/wilkos-dans/VLO-mapping/archive/CLPFAIR.tar.gz`
+  
+However, this is quite annoying, because the config only gets loaded with the new facet field after the importer has run.   
+> **NOTE** **TODO**: Need to find a way to load the (new) solr config when starting it.
+
+
+## Steps for adding new facet to VLO
 Ideally to add a new facet to VLO, you need to do the following steps:
 1. Add the new field to `FieldKey.java` in `vlo-commons` module
 2. Add the new field to `VloConfig.xml` in `vlo-commons` module
@@ -28,6 +58,7 @@ Ideally to add a new facet to VLO, you need to do the following steps:
 4. Add the new field to `fieldNames.properties` in `vlo-web-app` module
 5. Add the new field to `Metadataimporter.java` in `vlo-importer` module
 6. Around line line 99 in `FacetProcessorVTDXML.java` in `vlo-importer` module, add a new case for the new field
+7. Add the Solr field facet config in 'some' facetsConfiguration.xml
 
 > **NOTE** **TODO**: Still investigating how field rewriting should be properly (systematically) done.
 
