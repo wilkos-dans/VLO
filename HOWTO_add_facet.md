@@ -49,6 +49,12 @@ So I decided to take this route, via the `datasets-vlo` repository (local clone)
 However, this is quite annoying, because the config only gets loaded with the new facet field after the importer has run.   
 > **NOTE** **TODO**: Need to find a way to load the (new) solr config when starting it.
 
+**Example result facet:**   
+<img src='https://github.com/wilkos-dans/VLO/blob/patch-1/fair-facet.jpg' width='800'>
+<br />
+**Example result fairness tab on recordpage (not yet described):**   
+<img src='https://github.com/wilkos-dans/VLO/blob/patch-1/fairness-tab.jpg' width='600'>
+
 
 ## Steps for adding new facet to VLO
 Ideally to add a new facet to VLO, you need to do the following steps:
