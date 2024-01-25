@@ -54,8 +54,20 @@ Some of the shell scripts have to be adapted to your local environment.
 After running the script, you should have a docker image named like `vlo-${VLO_VERSION}-docker`, i.e, `vlo-4.7.1-1-docker`.
 
 ### Running VLO
-In folder `clariah-vlo`, where all the docker compose files are located, run `docker-compose up -d`. Optionally you can add -f <location of docker compose file> to specify which docker compose file to use.
+In folder `clariah-vlo`, where all the docker compose files are located, run `docker-compose up -d`. Optionally you can add -f <location of docker compose file> to specify which docker compose file to use.  
+Also make sure that the `docker-compose.yaml` uses the correct Docker image (#LN41). Adjust if needed.
 
 ### Run importer and see the VLO portal
+- First start the apps by starting them from `datasets-vlo`:   
+```$ ./control.sh -s -v start```   
+The (empty) VLO should be visible at: `http://localhost:38081`.
+Wicket might throw some internal error here, because the 'custom' facet field is not yet available to the app. This can be solved by running the importer in tghe next step.   
+- Now you can import the (CMDI) records:   
+```$ ./control.sh -s -v run-import```   
+- To stop the service:   
+```$ ./control.sh -s stop```   
 
-
+When starting the docker image, some file-mounts are also created.  
+F.i. some (wicket) properties files are mounted into the war.  
+Example: in `/datasets-vlo/clarin/clariah.yml`
+`./clariah/pages/FacetedSearchPage.properties:/opt/vlo/war/vlo/WEB-INF/classes/eu/clarin/cmdi/vlo/wicket/pages/FacetedSearchPage.properties`
