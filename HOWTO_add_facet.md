@@ -36,9 +36,10 @@ Ideally to add a new facet to VLO, you need to do the following steps:
 - `mvn clean package` in `vlo-commons` module, with `-DskipTests=True` if you want to skip tests. 
 
 ### Building whole project
-The following line will build a war file of VLO and it is **not** depending on your local `java` and `maven` version.
+The line below will build a war file of VLO and it is **not** depending on your local `java` and `maven` version.  
+The -Pdocker argument indicates the maven "docker' profile. If you need a war to be deployed on your local container (Tomcat) you can skip the agument.
 
-- `CLEAN_CACHE=true ./build.sh -DskipTests=true -Pdocker` in root folder of `VLO`. 
+- `CLEAN_CACHE=true ./build.sh -DskipTests=true -Pdocker` in root folder of `VLO`.
 
 ### Building docker image
 The following line will build a docker image. With the latest version of the `VLO` project which just being built locally.
