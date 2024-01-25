@@ -79,7 +79,7 @@ The following line will build a war file of VLO and it is **not** depending on y
 
 ### Building docker image
 The following line will build a docker image. With the latest version of the `VLO` project which just being built locally.
-- Run `./build.sh -b -l` in [`docker-vlo-beta`](../docker-vlo-beta) folder.
+- Run `./build.sh -b -l` in [`docker-vlo-beta`](https://gitlab.com/CLARIN-ERIC/docker-vlo-beta) folder.
 
 Some of the shell scripts have to be adapted to your local environment.
 - In `copy_data.sh`, source `copy_data_env.dev.sh` instead of `copy_data_env.sh`
